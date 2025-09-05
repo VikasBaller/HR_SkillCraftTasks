@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Functional Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .calc-button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 4rem;
+            font-size: 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
+            user-select: none;
+        }
+
+        .calc-button:hover {
+            transform: scale(1.05);
+        }
+
+        .calc-button:active {
+            transform: scale(0.95);
+        }
+
+        .bg-gray-700:hover {
+            background-color: #4a5568;
+        }
+
+        .bg-indigo-500:hover {
+            background-color: #5a67d8;
+        }
+
+        .bg-indigo-600:hover {
+            background-color: #434190;
+        }
+
+        .operator {
+            background-color: #6366f1;
+            color: white;
+        }
+
+        .equals {
+            background-color: #4f46e5;
+            color: white;
+        }
+
+        #display {
+            grid-column: span 4;
+            height: 5rem;
+            background-color: #2d3748;
+            color: white;
+            font-size: 2.5rem;
+            text-align: right;
+            padding: 0.5rem 1rem;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-white p-4">
+
+    <!-- Main calculator container -->
+    <div class="bg-gray-800 rounded-3xl shadow-2xl p-6 w-96">
+        <div class="mb-4 text-center">
+            <h1 class="text-3xl font-bold text-indigo-400">Calculator</h1>
+        </div>
+
+        <!-- Display screen -->
+        <div id="display" class="rounded-xl mb-6 flex items-center justify-end font-light">0</div>
+
+        <!-- Calculator buttons grid -->
+        <div class="calculator-grid">
+            <!-- Clear and delete buttons -->
+            <button class="calc-button bg-gray-700 text-red-400 rounded-2xl shadow-lg" data-key="C">C</button>
+            <button class="calc-button bg-gray-700 text-indigo-400 rounded-2xl shadow-lg"
+                data-key="ArrowLeft">DEL</button>
+            <button class="calc-button bg-gray-700 operator rounded-2xl shadow-lg" data-key="%">%</button>
+            <button class="calc-button bg-gray-700 operator rounded-2xl shadow-lg" data-key="/">&#247;</button>
+
+            <!-- Number and operator buttons -->
+            <button class="calc-button bg-gray-700 rounded-2xl shadow-lg" data-key="7">7</button>
+            <button class="calc-button bg-gray-700 rounded-2xl shadow-lg" data-key="8">8</button>
+            <button class="calc-button bg-gray-700 rounded-2xl shadow-lg" data-key="9">9</button>
+            <button class="calc-button bg-gray-700 operator rounded-2xl shadow-lg" data-key="*">&times;</button>
+
+            <button class="calc-button bg-gray-700 rounded-2xl shadow-lg" data-key="4">4</button>
+            <button class="calc-button bg-gray-700 rounded-2xl shadow-lg" data-key="5">5</button>
+            <button class="calc-button bg-gray-700 rounded-2xl shadow-lg" data-key="6">6</button>
+            <button class="calc-button bg-gray-700 operator rounded-2xl shadow-lg" data-key="-">-</button>
+
+            <button class="calc-button bg-gray-700 rounded-2xl shadow-lg" data-key="1">1</button>
+            <button class="calc-button bg-gray-700 rounded-2xl shadow-lg" data-key="2">2</button>
+            <button class="calc-button bg-gray-700 rounded-2xl shadow-lg" data-key="3">3</button>
+            <button class="calc-button bg-gray-700 operator rounded-2xl shadow-lg" data-key="+">+</button>
+
+            <button class="calc-button bg-gray-700 rounded-2xl shadow-lg" data-key="0">0</button>
+            <button class="calc-button bg-gray-700 rounded-2xl shadow-lg" data-key=".">.</button>
+            <button class="calc-button bg-indigo-600 equals rounded-2xl shadow-lg col-span-2"
+                data-key="Enter">=</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const display = document.getElementById('display');
+            let currentInput = '0';
+            let storedOperator = null;
+            let firstOperand = null;
+            let awaitingNextOperand = false;
+
+            const updateDisplay = () => {
+                display.textContent = currentInput;
+            };
+
+            const clearAll = () => {
+                currentInput = '0';
+                firstOperand = null;
+                storedOperator = null;
+                awaitingNextOperand = false;
+                updateDisplay();
+            };
+
+            const deleteLast = () => {
+                currentInput = currentInput.slice(0, -1);
+                if (currentInput === '') {
+                    currentInput = '0';
+                }
+                updateDisplay();
+            };
+
+            const handleNumberInput = (number) => {
+                if (awaitingNextOperand) {
+                    currentInput = number;
+                    awaitingNextOperand = false;
+                } else {
+                    currentInput = currentInput === '0' ? number : currentInput + number;
+                }
+                updateDisplay();
+            };
+
+            const handleDecimalInput = () => {
+                if (awaitingNextOperand) {
+                    currentInput = '0.';
+                    awaitingNextOperand = false;
+                } else if (!currentInput.includes('.')) {
+                    currentInput += '.';
+                }
+                updateDisplay();
+            };
+
+            const calculate = (first, operator, second) => {
+                const num1 = parseFloat(first);
+                const num2 = parseFloat(second);
+
+                if (isNaN(num1) || isNaN(num2)) {
+                    return 'Error';
+                }
+
+                switch (operator) {
+                    case '+':
+                        return (num1 + num2).toString();
+                    case '-':
+                        return (num1 - num2).toString();
+                    case '*':
+                        return (num1 * num2).toString();
+                    case '/':
+                        if (num2 === 0) return 'Error';
+                        return (num1 / num2).toString();
+                    case '%':
+                        return (num1 / 100).toString();
+                    default:
+                        return 'Error';
+                }
+            };
+
+            const handleOperatorInput = (nextOperator) => {
+                const inputValue = parseFloat(currentInput);
+
+                if (storedOperator && awaitingNextOperand) {
+                    storedOperator = nextOperator;
+                    return;
+                }
+
+                if (firstOperand === null) {
+                    firstOperand = inputValue;
+                } else if (storedOperator) {
+                    const result = calculate(firstOperand, storedOperator, inputValue);
+                    currentInput = result;
+                    firstOperand = parseFloat(currentInput);
+                }
+
+                awaitingNextOperand = true;
+                storedOperator = nextOperator;
+                updateDisplay();
+            };
+
+            const handleEquals = () => {
+                if (firstOperand === null || storedOperator === null) {
+                    return;
+                }
+                const result = calculate(firstOperand, storedOperator, parseFloat(currentInput));
+                currentInput = result;
+                firstOperand = null;
+                storedOperator = null;
+                awaitingNextOperand = false;
+                updateDisplay();
+            };
+
+            const handleInput = (value) => {
+                if (value >= '0' && value <= '9') {
+                    handleNumberInput(value);
+                } else if (value === '.') {
+                    handleDecimalInput();
+                } else if (['+', '-', '*', '/', '%'].includes(value)) {
+                    handleOperatorInput(value);
+                } else if (value === '=' || value === 'Enter') {
+                    handleEquals();
+                } else if (value === 'C') {
+                    clearAll();
+                } else if (value === 'DEL' || value === 'ArrowLeft') {
+                    deleteLast();
+                }
+            };
+
+            // Event listener for button clicks
+            document.querySelectorAll('.calc-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const value = e.target.textContent.trim();
+                    handleInput(value);
+                });
+            });
+
+            // Event listener for keyboard input
+            document.addEventListener('keydown', (e) => {
+                const key = e.key;
+                if (['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '+', '-', '*', '/', '%', '=', 'Enter', 'C', 'Backspace'].includes(key)) {
+                    if (key === 'Backspace') {
+                        handleInput('ArrowLeft'); // Map Backspace to the DEL key
+                    } else if (key === 'Enter') {
+                        handleInput('Enter');
+                    } else {
+                        handleInput(key);
+                    }
+                }
+            });
+        });
+
+        // Custom modal implementation for error messages, as alert() is blocked
+        function showMessage(message) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: #2d3748;
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+                z-index: 1000;
+                font-family: 'Inter', sans-serif;
+                text-align: center;
+                max-width: 80%;
+            `;
+            modal.innerHTML = `
+                <p class="text-xl font-bold mb-4">${message}</p>
+                <button class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-xl shadow-md" onclick="this.parentNode.remove()">OK</button>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Override the default alert() function to use our custom modal
+        window.alert = showMessage;
+    </script>
+</body>
+
+</html>
